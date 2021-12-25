@@ -1,6 +1,12 @@
+import platform
 from .errors import ChannelClosed, ChannelFull, ChannelEmpty
-from collections import deque
 from asyncio import Event, Future, get_event_loop
+from collections import deque
+from distutils.version import StrictVersion
+
+
+python_version = platform.python_version()
+LOOP_DEPRECATED = StrictVersion(python_version) >= StrictVersion("3.8.0")
 
 
 #
@@ -30,8 +36,12 @@ class Channel(object):
         self._putters = deque()
 
         # "finished" means channel is closed and drained
-        self._finished = Event(loop=self._loop)
-        self._close = Event(loop=self._loop)
+        if LOOP_DEPRECATED:
+            self._finished = Event()
+            self._close = Event()
+        else:
+            self._finished = Event(loop=self._loop)
+            self._close = Event(loop=self._loop)
 
         self._init()
 
